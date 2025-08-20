@@ -144,34 +144,31 @@ export default function Navbar() {
   <h3 className="text-lg font-semibold text-gray-800">{profileData.name}</h3>
   <p className="text-gray-600">{profileData.position}</p>
 </div>
-
-
-            <div className="space-y-3">
-              <div className="flex border-b border-gray-200 pb-3">
-                <span className="font-medium w-1/6 text-gray-500">Email:</span>
-                <span className="text-gray-800">{profileData.email}</span>
-              </div>
-              <div className="flex border-b border-gray-200 pb-3">
-                <span className="font-medium w-1/3 text-gray-500">Major - School:</span>
-                <span className="text-gray-800">{profileData.department}</span>
-              </div>
-              <div className="pt-2">
-                <span className="font-medium block mb-2 text-gray-500">Bio:</span>
-                <p className="text-gray-800">{profileData.bio}</p>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => setShowProfileModal(false)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md transition"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+    <div className="space-y-3">
+      <div className="flex border-b border-gray-200 pb-3">
+        <span className="font-medium w-1/6 text-gray-500">Email:</span>
+        <span className="text-gray-800">{profileData.email}</span>
+      </div>
+      <div className="flex border-b border-gray-200 pb-3">
+        <span className="font-medium w-1/3 text-gray-500">Major - School:</span>
+        <span className="text-gray-800">{profileData.department}</span>
+      </div>
+      <div className="pt-2">
+        <span className="font-medium block mb-2 text-gray-500">Bio:</span>
+        <p className="text-gray-800">{profileData.bio}</p>
+      </div>
     </div>
-  );
+      <div className="mt-6 flex justify-end">
+        <button
+          onClick={() => setShowProfileModal(false)}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md transition"
+        >
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+    )}
+    </div>
+    );
 }

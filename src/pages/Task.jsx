@@ -18,6 +18,12 @@ export default function Task() {
   const [progressNote, setProgressNote] = useState("");
   const [editProgressIdx, setEditProgressIdx] = useState(null);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage] = useState(5);
+  const [progressPage, setProgressPage] = useState(1);
+  const [progressPerPage] = useState(5);
+
   // Available categories
   const categories = ["Project A", "Testing", "Bug Fixing", "Documentation", "Meeting"];
   
@@ -32,6 +38,32 @@ export default function Task() {
     const saved = localStorage.getItem("tasks");
     setTasks(saved ? JSON.parse(saved) : []);
   }, []);
+
+  // Pagination calculations for tasks
+  const indexOfLastTask = currentPage * rowsPerPage;
+  const indexOfFirstTask = indexOfLastTask - rowsPerPage;
+  const currentTasks = tasks.slice(indexOfFirstTask, indexOfLastTask);
+  const totalPages = Math.ceil(tasks.length / rowsPerPage);
+
+  // Pagination function for tasks
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Pagination logic for progress items
+  const getProgressItems = () => {
+    if (!selectedTask || !selectedTask.progress || !Array.isArray(selectedTask.progress)) {
+      return [];
+    }
+    const indexOfLastProgress = progressPage * progressPerPage;
+    const indexOfFirstProgress = indexOfLastProgress - progressPerPage;
+    return selectedTask.progress.slice(indexOfFirstProgress, indexOfLastProgress);
+  };
+
+  const totalProgressPages = selectedTask?.progress 
+    ? Math.ceil(selectedTask.progress.length / progressPerPage) 
+    : 0;
+
+  // Pagination function for progress
+  const paginateProgress = (pageNumber) => setProgressPage(pageNumber);
 
   // Function to get color based on status
   const getStatusColors = (status) => {
@@ -95,7 +127,7 @@ export default function Task() {
       endDate: endDate || "",
       category: category || "Uncategorized",
       priority: priority || "medium", // Add priority field
-      progress: [],
+      progress: [], // Ensure this is always initialized as an empty array
     };
     const updated = [...tasks, newTask];
     setTasks(updated);
@@ -116,11 +148,17 @@ export default function Task() {
 
   // Tampilkan modal detail
   const handleShowDetail = (task) => {
-    setSelectedTask(task);
-    setShowDetailModal(true);
+    // Make sure progress is always an array
+    const taskWithProgress = {
+      ...task,
+      progress: Array.isArray(task.progress) ? task.progress : []
+    };
+    setSelectedTask(taskWithProgress);
     setProgressDate("");
     setProgressNote("");
     setEditProgressIdx(null);
+    setProgressPage(1);
+    setShowDetailModal(true);
   };
 
   // Tutup modal detail
@@ -185,8 +223,7 @@ export default function Task() {
     setProgressNote("");
     setEditProgressIdx(null);
   };
-
-  // Hapus progress
+  
   const handleDeleteProgress = (idx) => {
     let updatedTasks = tasks.map((task) => {
       if (task.id === selectedTask.id) {
@@ -242,13 +279,13 @@ export default function Task() {
                 <th className="px-4 py-2 border-b text-left">Title</th>
                 <th className="px-4 py-2 border-b text-left">Status</th>
                 <th className="px-4 py-2 border-b text-left">Category</th>
-                <th className="px-4 py-2 border-b text-left">Priority</th> {/* New column */}
+                <th className="px-4 py-2 border-b text-left">Priority</th>
                 <th className="px-4 py-2 border-b text-left">Start Date</th>
                 <th className="px-4 py-2 border-b text-left">Action</th>
               </tr>
             </thead>
             <tbody>
-              {tasks.map((task, idx) => {
+              {currentTasks.map((task, idx) => {
                 const colorSet = getStatusColors(task.status);
                 const priorityColor = priorities.find(p => p.value === task.priority)?.color || "bg-gray-200 text-gray-800";
                 
@@ -257,7 +294,7 @@ export default function Task() {
                     key={task.id}
                     className={colorSet.bg}
                   >
-                    <td className="px-4 py-2 border-b">{idx + 1}</td>
+                    <td className="px-4 py-2 border-b">{indexOfFirstTask + idx + 1}</td>
                     <td className="px-4 py-2 border-b">{task.title}</td>
                     <td className="px-4 py-2 border-b">
                       <span
@@ -300,6 +337,39 @@ export default function Task() {
               })}
             </tbody>
           </table>
+          
+          {/* Pagination for tasks */}
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-4">
+              <nav className="flex items-center">
+                <button 
+                  onClick={() => paginate(currentPage > 1 ? currentPage - 1 : 1)}
+                  disabled={currentPage === 1}
+                  className={`mx-1 px-3 py-1 rounded ${currentPage === 1 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
+                >
+                  &laquo;
+                </button>
+                
+                {[...Array(totalPages)].map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => paginate(idx + 1)}
+                    className={`mx-1 px-3 py-1 rounded ${currentPage === idx + 1 ? 'bg-indigo-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
+                  >
+                    {idx + 1}
+                  </button>
+                ))}
+                
+                <button 
+                  onClick={() => paginate(currentPage < totalPages ? currentPage + 1 : totalPages)}
+                  disabled={currentPage === totalPages}
+                  className={`mx-1 px-3 py-1 rounded ${currentPage === totalPages ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
+                >
+                  &raquo;
+                </button>
+              </nav>
+            </div>
+          )}
         </div>
       )}
 
@@ -494,39 +564,74 @@ export default function Task() {
                 </tr>
               </thead>
               <tbody>
-                {selectedTask.progress && selectedTask.progress.length === 0 ? (
+                {!selectedTask.progress || selectedTask.progress.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="text-center text-gray-500 py-4">
                       Belum ada progress.
                     </td>
                   </tr>
                 ) : (
-                  selectedTask.progress &&
-                  selectedTask.progress.map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="px-4 py-2 border-b">{item.date}</td>
-                      <td className="px-4 py-2 border-b">{item.note}</td>
-                      <td className="px-4 py-2 border-b flex gap-2">
-                        <button
-                          onClick={() => handleEditProgress(idx)}
-                          className="bg-yellow-100 hover:bg-yellow-200 text-yellow-700 px-2 py-1 rounded text-sm flex items-center gap-1"
-                          title="Edit"
-                        >
-                          <i className="fa-solid fa-pen-to-square"></i>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteProgress(idx)}
-                          className="bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded text-sm flex items-center gap-1"
-                          title="Delete"
-                        >
-                          <i className="fa-solid fa-trash"></i>
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                  getProgressItems().map((item, idx) => {
+                    const actualIdx = (progressPage - 1) * progressPerPage + idx;
+                    return (
+                      <tr key={actualIdx}>
+                        <td className="px-4 py-2 border-b">{item.date}</td>
+                        <td className="px-4 py-2 border-b">{item.note}</td>
+                        <td className="px-4 py-2 border-b flex gap-2">
+                          <button
+                            onClick={() => handleEditProgress(actualIdx)}
+                            className="bg-yellow-100 hover:bg-yellow-200 text-yellow-700 px-2 py-1 rounded text-sm flex items-center gap-1"
+                            title="Edit"
+                          >
+                            <i className="fa-solid fa-pen-to-square"></i>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProgress(actualIdx)}
+                            className="bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded text-sm flex items-center gap-1"
+                            title="Delete"
+                          >
+                            <i className="fa-solid fa-trash"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
+            
+            {/* Pagination for progress */}
+            {totalProgressPages > 1 && (
+              <div className="flex justify-center mt-4">
+                <nav className="flex items-center">
+                  <button 
+                    onClick={() => paginateProgress(progressPage > 1 ? progressPage - 1 : 1)}
+                    disabled={progressPage === 1}
+                    className={`mx-1 px-3 py-1 rounded ${progressPage === 1 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
+                  >
+                    &laquo;
+                  </button>
+                  
+                  {[...Array(totalProgressPages)].map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => paginateProgress(idx + 1)}
+                      className={`mx-1 px-3 py-1 rounded ${progressPage === idx + 1 ? 'bg-indigo-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
+                    >
+                      {idx + 1}
+                    </button>
+                  ))}
+                  
+                  <button 
+                    onClick={() => paginateProgress(progressPage < totalProgressPages ? progressPage + 1 : totalProgressPages)}
+                    disabled={progressPage === totalProgressPages}
+                    className={`mx-1 px-3 py-1 rounded ${progressPage === totalProgressPages ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
+                  >
+                    &raquo;
+                  </button>
+                </nav>
+              </div>
+            )}
           </div>
         </div>
       )}
